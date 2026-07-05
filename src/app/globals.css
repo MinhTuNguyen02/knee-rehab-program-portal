@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* Force light mode by requiring a .dark class that we won't add */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #f5f8fa; /* Soft off-white with slight blue/teal tint */
+  --foreground: #1e293b; /* Softer dark gray slate-800 */
+  --primary: #007a87; /* Soft premium teal */
+  --primary-hover: #006670;
+  --primary-active: #00525a;
+  
+  --zone-green: #10B981;
+  --zone-amber: #F59E0B;
+  --zone-red: #EF4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-zone-green: var(--zone-green);
+  --color-zone-amber: var(--zone-amber);
+  --color-zone-red: var(--zone-red);
+  
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

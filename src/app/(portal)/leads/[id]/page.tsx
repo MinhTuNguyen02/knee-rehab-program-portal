@@ -1,7 +1,7 @@
 import { fetchWithAuth } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
-import { LeadAssessmentsClient } from "@/components/LeadAssessmentsClient";
+import { LeadAssessmentsClient } from "@/components/features/LeadAssessmentsClient";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, UserCircle, EnvelopeSimple, Phone, CalendarBlank, GenderIntersex, WarningCircle, CheckCircle } from "@phosphor-icons/react/dist/ssr";

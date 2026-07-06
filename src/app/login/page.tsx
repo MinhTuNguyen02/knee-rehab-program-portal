@@ -3,18 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LockKey, User } from "@phosphor-icons/react";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -28,10 +27,11 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid credentials");
       }
 
+      toast.success("Welcome back!");
       router.push("/dashboard");
       router.refresh();
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
@@ -50,11 +50,6 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
-              {error}
-            </div>
-          )}
 
           <div className="space-y-4">
             <div className="space-y-2">

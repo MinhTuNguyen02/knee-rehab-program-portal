@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { CaretUp, CaretDown, ArrowsDownUp } from "@phosphor-icons/react";
-import { Pagination } from "@/components/Pagination";
+import { Pagination } from "@/components/data-display/Pagination";
 
 export interface ColumnDef<T = any> {
   key: string;
@@ -57,9 +57,8 @@ export function DataTable<T = any>({
               <th
                 key={col.key}
                 scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400 ${
-                  col.sortable && onSort ? "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800" : ""
-                }`}
+                className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400 ${col.sortable && onSort ? "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800" : ""
+                  }`}
                 onClick={() => col.sortable && onSort && onSort(col.key)}
               >
                 <div className="flex items-center gap-2">
@@ -74,9 +73,8 @@ export function DataTable<T = any>({
           {data.map((item, rowIndex) => (
             <tr
               key={(item as any).id || rowIndex}
-              className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
-                onRowClick ? "cursor-pointer" : ""
-              }`}
+              className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${onRowClick ? "cursor-pointer" : ""
+                }`}
               onClick={() => onRowClick && onRowClick(item)}
             >
               {columns.map((col) => (

@@ -1,8 +1,8 @@
 import { fetchWithAuth } from "@/lib/api";
 import { getToken } from "@/lib/auth";
-import { KPICard } from "@/components/KPICard";
-import { DashboardChartsClient } from "@/components/DashboardChartsClient";
-import { RecentAssessmentsClient } from "@/components/RecentAssessmentsClient";
+import { KPICard } from "@/components/ui/KPICard";
+import { DashboardChartsClient } from "@/components/data-display/DashboardChartsClient";
+import { RecentAssessmentsClient } from "@/components/features/RecentAssessmentsClient";
 import { ChartLineUp, Users, PresentationChart, CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { redirect } from "next/navigation";

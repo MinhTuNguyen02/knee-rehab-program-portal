@@ -1,6 +1,7 @@
 import { fetchWithAuth } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { ZoneBadge } from "@/components/ZoneBadge";
+import { LeadAssessmentsClient } from "@/components/LeadAssessmentsClient";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, UserCircle, EnvelopeSimple, Phone, CalendarBlank, GenderIntersex, WarningCircle, CheckCircle } from "@phosphor-icons/react/dist/ssr";
@@ -8,7 +9,7 @@ import { ArrowLeft, UserCircle, EnvelopeSimple, Phone, CalendarBlank, GenderInte
 export default async function LeadDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const token = await getToken();
-  
+
   if (!token) {
     redirect("/login");
   }
@@ -76,7 +77,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
             </div>
             <div className="space-y-1">
               <span className="text-xs font-medium text-slate-500 flex items-center gap-1"><WarningCircle size={14} /> Knee Side</span>
-              <p className="text-sm text-slate-900 font-medium capitalize">{lead.kneeSide || "N/A"}</p>
+              <p className="text-sm text-slate-900 font-medium capitalize">{({ "R": "Right", "L": "Left", "B": "Both" } as Record<string, string>)[lead.kneeSide] || lead.kneeSide || "N/A"}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs font-medium text-slate-500 flex items-center gap-1"><CheckCircle size={14} /> Consent</span>
@@ -115,49 +116,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
           <h3 className="text-base font-semibold text-slate-900">Assessment History</h3>
           <p className="mt-1 text-sm text-slate-500">All assessments submitted by this patient.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pain</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Function</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Score</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Zone</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {assessments.map((assessment: any) => (
-                <tr key={assessment.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900 font-mono">
-                    {assessment.displayId || assessment.id.substring(0, 8)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                    {new Date(assessment.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                    {assessment.pain !== null && assessment.pain !== undefined ? assessment.pain : "N/A"}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                    {assessment.functionScore !== null && assessment.functionScore !== undefined ? assessment.functionScore : "N/A"}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900 font-mono">
-                    {assessment.score}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <ZoneBadge zone={assessment.zone} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {assessments.length === 0 && (
-            <div className="px-6 py-12 text-center text-sm text-slate-500">
-              No assessments recorded for this patient.
-            </div>
-          )}
-        </div>
+        <LeadAssessmentsClient assessments={assessments} />
       </div>
     </div>
   );

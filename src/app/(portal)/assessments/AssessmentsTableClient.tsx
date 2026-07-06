@@ -3,15 +3,19 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ZoneFilter } from "@/components/ZoneFilter";
-import { Pagination } from "@/components/Pagination";
 import { ZoneBadge } from "@/components/ZoneBadge";
-import { CaretUp, CaretDown, ArrowsDownUp } from "@phosphor-icons/react";
+import { Modal } from "@/components/Modal";
+import { AssessmentDetails } from "@/components/AssessmentDetails";
+import { DataTable } from "@/components/DataTable";
 
 export function AssessmentsTableClient({ initialData, meta, currentPage, currentZone, currentSource }: any) {
   const router = useRouter();
 
   const [sortField, setSortField] = useState<string>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  
+  const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleFilterChange = (zone: string, source: string) => {
     const query = new URLSearchParams();
@@ -57,11 +61,6 @@ export function AssessmentsTableClient({ initialData, meta, currentPage, current
     return result;
   }, [initialData, sortField, sortDirection]);
 
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ArrowsDownUp size={14} className="text-slate-400" />;
-    return sortDirection === "asc" ? <CaretUp size={14} className="text-primary" /> : <CaretDown size={14} className="text-primary" />;
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -81,73 +80,54 @@ export function AssessmentsTableClient({ initialData, meta, currentPage, current
       </div>
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort("createdAt")}>
-                  <div className="flex items-center gap-2">Date <SortIcon field="createdAt" /></div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort("score")}>
-                  <div className="flex items-center gap-2">Score <SortIcon field="score" /></div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort("zone")}>
-                  <div className="flex items-center gap-2">Zone <SortIcon field="zone" /></div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Source</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort("patient")}>
-                  <div className="flex items-center gap-2">Linked Patient <SortIcon field="patient" /></div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {sortedData.map((assessment: any) => (
-                <tr key={assessment.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900 font-mono">
-                    {assessment.displayId || assessment.id.substring(0, 8)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                    {new Date(assessment.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900 font-mono">
-                    {assessment.score}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <ZoneBadge zone={assessment.zone} />
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500 capitalize">
-                    {assessment.source?.replace('_', ' ') || "N/A"}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                    {assessment.patient ? (
-                      <button
-                        onClick={() => router.push(`/leads/${assessment.patient.id}`)}
-                        className="text-primary hover:text-primary-hover font-medium underline-offset-2 hover:underline"
-                      >
-                        {assessment.patient.firstName} {assessment.patient.lastName}
-                      </button>
-                    ) : (
-                      <span className="text-slate-400 italic">Anonymous</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {sortedData.length === 0 && (
-            <div className="px-6 py-12 text-center text-sm text-slate-500">
-              No assessments found matching your criteria.
-            </div>
-          )}
-        </div>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={meta.totalPages}
-          totalCount={meta.total}
-          onPageChange={handlePageChange}
+        <DataTable
+          columns={[
+            { key: "displayId", label: "ID", sortable: false, className: "font-medium text-slate-900 font-mono", render: (a) => a.displayId || a.id.substring(0, 8) },
+            { key: "score", label: "Score", sortable: true, className: "font-medium text-slate-900 font-mono" },
+            { key: "zone", label: "Zone", sortable: true, render: (a) => <ZoneBadge zone={a.zone} /> },
+            { key: "source", label: "Source", sortable: false, className: "capitalize", render: (a) => a.source?.replace('_', ' ') || "N/A" },
+            { 
+              key: "patient", 
+              label: "Linked Patient", 
+              sortable: true, 
+              render: (a) => a.patient ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/leads/${a.patient.id}`);
+                  }}
+                  className="text-primary hover:text-primary-hover font-medium underline-offset-2 hover:underline"
+                >
+                  {a.patient.firstName} {a.patient.lastName}
+                </button>
+              ) : (
+                <span className="text-slate-400 italic">Anonymous</span>
+              )
+            },
+            { key: "createdAt", label: "Date", sortable: true, render: (a) => new Date(a.createdAt).toLocaleDateString() },
+          ]}
+          data={sortedData}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onRowClick={(assessment) => { setSelectedAssessment(assessment); setIsModalOpen(true); }}
+          emptyStateMessage="No assessments found matching your criteria."
+          pagination={{
+            currentPage: currentPage,
+            totalPages: meta.totalPages,
+            totalCount: meta.total,
+            onPageChange: handlePageChange
+          }}
         />
       </div>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Assessment Details"
+      >
+        <AssessmentDetails assessment={selectedAssessment} />
+      </Modal>
     </div>
   );
 }

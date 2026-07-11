@@ -2,9 +2,12 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LockKey, Eye, EyeClosed, CircleNotch } from "@phosphor-icons/react";
+import { Lock, AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import toast from "react-hot-toast";
 import Link from "next/link";
+
+import { adminResetPassword } from "@/app/actions/admin-auth";
+import { useTransition } from "react";
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -17,8 +20,9 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFieldErrors({});
     if (!token) {
@@ -52,46 +56,21 @@ function ResetPasswordForm() {
 
     setIsLoading(true);
 
-    try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword: password }),
-      });
+    const formData = new FormData(e.currentTarget);
 
-      if (!res.ok) {
-        const data = await res.json();
-        const errorMsgs = Array.isArray(data.message) ? data.message : [data.message || "Failed to reset password"];
-        const backendFieldErrors: typeof fieldErrors = {};
-        let genericError: string | null = null;
-
-        errorMsgs.forEach((msg: string) => {
-          const lowercaseMsg = msg.toLowerCase();
-          if (lowercaseMsg.includes("password")) {
-            backendFieldErrors.password = msg;
-          } else {
-            genericError = msg;
-          }
-        });
-
-        if (Object.keys(backendFieldErrors).length > 0) {
-          setFieldErrors(backendFieldErrors);
-        }
-        throw new Error(genericError || "");
-      }
-
-      setIsSuccess(true);
-      toast.success("Password reset successfully!");
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    } catch (err: any) {
-      if (err.message) {
-        toast.error(err.message);
-      }
-    } finally {
+    startTransition(async () => {
+      const result = await adminResetPassword(formData);
       setIsLoading(false);
-    }
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        setIsSuccess(true);
+        toast.success("Password reset successfully!");
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      }
+    });
   };
 
   if (!token) {
@@ -103,8 +82,12 @@ function ResetPasswordForm() {
         <p className="text-sm text-slate-600 dark:text-slate-400">
           The password reset link is invalid or has expired.
         </p>
-        <div className="pt-4">
-          <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-primary-hover">
+        <div className="pt-4 flex justify-center">
+          <Link
+            href="/forgot-password"
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
             Request a new link
           </Link>
         </div>
@@ -122,7 +105,7 @@ function ResetPasswordForm() {
           Your password has been successfully reset. Redirecting to login...
         </p>
         <div className="pt-4 flex justify-center">
-          <CircleNotch className="h-6 w-6 animate-spin text-primary" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       </div>
     );
@@ -140,6 +123,7 @@ function ResetPasswordForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <input type="hidden" name="token" value={token || ""} />
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="password">
@@ -147,16 +131,16 @@ function ResetPasswordForm() {
             </label>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                <LockKey size={18} />
+                <Lock className="w-4.5 h-4.5" />
               </div>
               <input
                 id="password"
+                name="newPassword"
                 type={showPassword ? "text" : "password"}
-                className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${
-                  fieldErrors.password
+                className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${fieldErrors.password
                     ? "ring-red-300 focus:ring-red-500"
                     : "ring-slate-300 focus:ring-primary dark:ring-slate-700"
-                }`}
+                  }`}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -164,10 +148,10 @@ function ResetPasswordForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-655 dark:hover:text-slate-300"
                 tabIndex={-1}
               >
-                {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
+                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
             </div>
             {fieldErrors.password && (
@@ -183,16 +167,15 @@ function ResetPasswordForm() {
             </label>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                <LockKey size={18} />
+                <Lock className="w-4.5 h-4.5" />
               </div>
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
-                className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${
-                  fieldErrors.confirmPassword
+                className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${fieldErrors.confirmPassword
                     ? "ring-red-300 focus:ring-red-500"
                     : "ring-slate-300 focus:ring-primary dark:ring-slate-700"
-                }`}
+                  }`}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -200,10 +183,10 @@ function ResetPasswordForm() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-655 dark:hover:text-slate-300"
                 tabIndex={-1}
               >
-                {showConfirmPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
+                {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
             </div>
             {fieldErrors.confirmPassword && (
@@ -216,10 +199,10 @@ function ResetPasswordForm() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isPending}
           className="flex w-full justify-center rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
         >
-          {isLoading ? "Resetting..." : "Reset Password"}
+          {isLoading || isPending ? "Resetting..." : "Reset Password"}
         </button>
       </form>
     </div>
@@ -230,7 +213,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
-        <Suspense fallback={<div className="flex justify-center p-8"><CircleNotch className="h-8 w-8 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
           <ResetPasswordForm />
         </Suspense>
       </div>

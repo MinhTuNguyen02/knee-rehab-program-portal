@@ -2,67 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { EnvelopeSimple, ArrowLeft } from "@phosphor-icons/react";
+import { Mail, ArrowLeft } from 'lucide-react';
 import toast from "react-hot-toast";
 import Link from "next/link";
+
+import { adminForgotPassword } from "@/app/actions/admin-auth";
+import { useTransition } from "react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setEmailError(null);
     setIsLoading(true);
 
-    if (!email) {
-      setEmailError("Email address is required.");
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      const result = await adminForgotPassword(formData);
       setIsLoading(false);
-      return;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError("Please enter a valid email address.");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        const errorMsgs = Array.isArray(data.message) ? data.message : [data.message || "Failed to process request"];
-        let fieldErr: string | null = null;
-        let genericErr: string | null = null;
-
-        errorMsgs.forEach((msg: string) => {
-          if (msg.toLowerCase().includes("email")) {
-            fieldErr = msg;
-          } else {
-            genericErr = msg;
-          }
-        });
-
-        if (fieldErr) {
-          setEmailError(fieldErr);
-        }
-        throw new Error(genericErr || "");
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        setIsSuccess(true);
+        toast.success("Check your email for reset instructions.");
       }
-
-      setIsSuccess(true);
-      toast.success("Check your email for reset instructions.");
-    } catch (err: any) {
-      if (err.message) {
-        toast.error(err.message);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -90,16 +59,16 @@ export default function ForgotPasswordPage() {
               </label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <EnvelopeSimple size={18} />
+                  <Mail className="w-4.5 h-4.5" />
                 </div>
                 <input
                   id="email"
+                  name="email"
                   type="email"
-                  className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${
-                    emailError
+                  className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${emailError
                       ? "ring-red-300 focus:ring-red-500"
                       : "ring-slate-300 focus:ring-primary dark:ring-slate-700"
-                  }`}
+                    }`}
                   placeholder="admin@krps.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -114,20 +83,31 @@ export default function ForgotPasswordPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isPending}
               className="flex w-full justify-center rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
             >
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isLoading || isPending ? "Sending..." : "Send Reset Link"}
+            </button>
+            <button
+              className="flex w-full justify-center gap-2"
+            >
+              <Link
+                href="/login"
+                className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to login
+              </Link>
             </button>
           </form>
         ) : (
           <div className="flex justify-center pt-4">
             <Link
               href="/login"
-              className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover dark:text-primary dark:hover:text-primary-hover"
+              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
             >
-              <ArrowLeft size={16} />
-              Return to Login
+              <ArrowLeft className="w-4 h-4" />
+              Back to login
             </Link>
           </div>
         )}

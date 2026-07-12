@@ -5,14 +5,13 @@ import { useRouter } from "next/navigation";
 import { Mail, ArrowLeft } from 'lucide-react';
 import toast from "react-hot-toast";
 import Link from "next/link";
-
-import { adminForgotPassword } from "@/app/actions/admin-auth";
 import { useTransition } from "react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -20,16 +19,52 @@ export default function ForgotPasswordPage() {
     setEmailError(null);
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    if (!email) {
+      setEmailError("Email address is required.");
+      setIsLoading(false);
+      return;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Please enter a valid email address.");
+      setIsLoading(false);
+      return;
+    }
 
     startTransition(async () => {
-      const result = await adminForgotPassword(formData);
-      setIsLoading(false);
-      if (result?.error) {
-        toast.error(result.error);
-      } else {
-        setIsSuccess(true);
-        toast.success("Check your email for reset instructions.");
+      try {
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+        setIsLoading(false);
+
+        if (!res.ok) {
+          const errorMsgs = Array.isArray(data.message) ? data.message : [data.message || "Failed to process request"];
+          let fieldErr: string | null = null;
+          let genericErr: string | null = null;
+
+          errorMsgs.forEach((msg: string) => {
+            if (msg.toLowerCase().includes("email")) {
+              fieldErr = msg;
+            } else {
+              genericErr = msg;
+            }
+          });
+
+          if (fieldErr) {
+            setEmailError(fieldErr);
+          } else if (genericErr) {
+            toast.error(genericErr);
+          }
+        } else {
+          setIsSuccess(true);
+          toast.success("Check your email for reset instructions.");
+        }
+      } catch (err: any) {
+        setIsLoading(false);
+        toast.error("Failed to connect to the server.");
       }
     });
   };

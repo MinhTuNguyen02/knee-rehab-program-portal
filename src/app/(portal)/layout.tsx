@@ -4,8 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChartLineUp, Users, ClipboardText, List, SignOut, X } from "@phosphor-icons/react";
-
-import { adminLogout } from "@/app/actions/admin-auth";
 import { useTransition } from "react";
 
 export default function PortalLayout({
@@ -20,7 +18,10 @@ export default function PortalLayout({
 
   const handleLogout = async () => {
     startTransition(async () => {
-      await adminLogout();
+      try {
+        await fetch("/api/auth/logout", { method: "POST" });
+      } catch (err) {}
+      router.push("/login");
     });
   };
 

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { adminLogin } from "@/app/actions/admin-auth";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -18,7 +17,6 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-
   useEffect(() => {
     if (searchParams.get("reason") === "expired") {
       toast.error("Your session has expired. Please sign in again.");
@@ -30,16 +28,68 @@ function LoginForm() {
     setFieldErrors({});
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    let hasError = false;
+    const newFieldErrors: typeof fieldErrors = {};
+
+    if (!email) {
+      newFieldErrors.email = "Email address is required.";
+      hasError = true;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newFieldErrors.email = "Please enter a valid email address.";
+      hasError = true;
+    }
+
+    if (!password) {
+      newFieldErrors.password = "Password is required.";
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(newFieldErrors);
+      setIsLoading(false);
+      return;
+    }
 
     startTransition(async () => {
-      const result = await adminLogin(formData);
-      setIsLoading(false);
-      if (result?.error) {
-        toast.error(result.error);
-      } else if (result?.success) {
-        toast.success("Welcome back!");
-        router.push('/dashboard');
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+        setIsLoading(false);
+
+        if (!res.ok) {
+          const errorMsgs = Array.isArray(data.message) ? data.message : [data.message || "Invalid credentials"];
+          const backendFieldErrors: typeof fieldErrors = {};
+          let genericError: string | null = null;
+
+          errorMsgs.forEach((msg: string) => {
+            const lowercaseMsg = msg.toLowerCase();
+            if (lowercaseMsg.includes("email")) {
+              backendFieldErrors.email = msg;
+            } else if (lowercaseMsg.includes("password") || lowercaseMsg.includes("credentials")) {
+              backendFieldErrors.password = msg;
+            } else {
+              genericError = msg;
+            }
+          });
+
+          if (Object.keys(backendFieldErrors).length > 0) {
+            setFieldErrors(backendFieldErrors);
+          }
+          if (genericError) {
+            toast.error(genericError);
+          }
+        } else {
+          toast.success("Welcome back!");
+          router.push('/dashboard');
+        }
+      } catch (err: any) {
+        setIsLoading(false);
+        toast.error("Failed to connect to the server.");
       }
     });
   };

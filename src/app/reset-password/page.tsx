@@ -5,8 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import toast from "react-hot-toast";
 import Link from "next/link";
-
-import { adminResetPassword } from "@/app/actions/admin-auth";
 import { useTransition } from "react";
 
 function ResetPasswordForm() {
@@ -56,19 +54,47 @@ function ResetPasswordForm() {
 
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-
     startTransition(async () => {
-      const result = await adminResetPassword(formData);
-      setIsLoading(false);
-      if (result?.error) {
-        toast.error(result.error);
-      } else {
-        setIsSuccess(true);
-        toast.success("Password reset successfully!");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+      try {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, newPassword: password }),
+        });
+
+        const data = await res.json();
+        setIsLoading(false);
+
+        if (!res.ok) {
+          const errorMsgs = Array.isArray(data.message) ? data.message : [data.message || "Failed to reset password"];
+          const backendFieldErrors: typeof fieldErrors = {};
+          let genericError: string | null = null;
+
+          errorMsgs.forEach((msg: string) => {
+            const lowercaseMsg = msg.toLowerCase();
+            if (lowercaseMsg.includes("password")) {
+              backendFieldErrors.password = msg;
+            } else {
+              genericError = msg;
+            }
+          });
+
+          if (Object.keys(backendFieldErrors).length > 0) {
+            setFieldErrors(backendFieldErrors);
+          }
+          if (genericError) {
+            toast.error(genericError);
+          }
+        } else {
+          setIsSuccess(true);
+          toast.success("Password reset successfully!");
+          setTimeout(() => {
+            router.push("/login");
+          }, 2000);
+        }
+      } catch (err: any) {
+        setIsLoading(false);
+        toast.error("Failed to connect to the server.");
       }
     });
   };

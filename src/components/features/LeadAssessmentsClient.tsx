@@ -7,6 +7,8 @@ import { Modal } from "@/components/ui/Modal";
 import { AssessmentDetails } from "@/components/management/AssessmentDetails";
 import { DataTable } from "@/components/data-display/DataTable";
 
+import { useMemo } from "react";
+
 interface LeadAssessmentsClientProps {
   assessments: any[];
 }
@@ -14,12 +16,72 @@ interface LeadAssessmentsClientProps {
 export function LeadAssessmentsClient({ assessments }: LeadAssessmentsClientProps) {
   const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 20;
 
-  const totalCount = assessments?.length || 0;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const paginatedData = assessments?.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE) || [];
+  const [currentCursor, setCurrentCursor] = useState<string>("");
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<string>("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const PAGE_SIZE = 10;
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+    setCursorHistory([]);
+    setCurrentCursor("");
+  };
+
+  const sortedData = useMemo(() => {
+    const result = [...(assessments || [])];
+    result.sort((a, b) => {
+      let valA = a[sortField];
+      let valB = b[sortField];
+
+      if (valA === null || valA === undefined) valA = sortDirection === "asc" ? Infinity : -Infinity;
+      if (valB === null || valB === undefined) valB = sortDirection === "asc" ? Infinity : -Infinity;
+
+      if (sortField === "createdAt") {
+        valA = new Date(a.createdAt).getTime();
+        valB = new Date(b.createdAt).getTime();
+      }
+
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+    return result;
+  }, [assessments, sortField, sortDirection]);
+
+  const startIndex = useMemo(() => {
+    if (!currentCursor) return 0;
+    const index = sortedData.findIndex((a) => a.id === currentCursor);
+    return index !== -1 ? index + 1 : 0;
+  }, [sortedData, currentCursor]);
+
+  const paginatedData = useMemo(() => {
+    return sortedData.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [sortedData, startIndex]);
+
+  const hasMore = startIndex + PAGE_SIZE < sortedData.length;
+  const endCursor = paginatedData.length > 0 ? paginatedData[paginatedData.length - 1].id : "";
+
+  const handleNextPage = () => {
+    if (!hasMore || !endCursor) return;
+    setCursorHistory((prev) => [...prev, currentCursor]);
+    setCurrentCursor(endCursor);
+  };
+
+  const handlePrevPage = () => {
+    if (cursorHistory.length === 0) return;
+    const newHistory = [...cursorHistory];
+    const prevCursor = newHistory.pop() || "";
+    setCursorHistory(newHistory);
+    setCurrentCursor(prevCursor);
+  };
 
   return (
     <>
@@ -33,13 +95,16 @@ export function LeadAssessmentsClient({ assessments }: LeadAssessmentsClientProp
           { key: "createdAt", label: "Date", sortable: false, render: (a) => formatDate(a.createdAt) },
         ]}
         data={paginatedData}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
         onRowClick={(assessment) => { setSelectedAssessment(assessment); setIsModalOpen(true); }}
         emptyStateMessage="No assessments recorded for this patient."
         pagination={{
-          hasMore: currentPage < totalPages,
-          canGoPrev: currentPage > 1,
-          onNext: () => setCurrentPage((prev) => prev + 1),
-          onPrev: () => setCurrentPage((prev) => prev - 1),
+          hasMore: hasMore,
+          canGoPrev: cursorHistory.length > 0,
+          onNext: handleNextPage,
+          onPrev: handlePrevPage,
         }}
       />
 

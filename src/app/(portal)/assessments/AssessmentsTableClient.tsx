@@ -103,7 +103,7 @@ export function AssessmentsTableClient({ initialData, meta, currentZone, initial
         <DataTable
           columns={[
             { key: "displayId", label: "ID", sortable: false, className: "font-medium text-slate-900 font-mono", render: (a) => a.displayId || a.id.substring(0, 8) },
-            { key: "score", label: "Score", sortable: true, className: "font-medium text-slate-900 font-mono" },
+            { key: "score", label: "Score", sortable: false, className: "font-medium text-slate-900 font-mono" },
             { key: "zone", label: "Zone", sortable: true, render: (a) => <ZoneBadge zone={a.zone} /> },
             { key: "source", label: "Source", sortable: false, className: "capitalize", render: (a) => a.source?.replace('_', ' ') || "N/A" },
             {

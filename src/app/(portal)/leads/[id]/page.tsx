@@ -99,7 +99,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
                     .filter(([_, value]) => value)
                     .map(([pref]) => (
                       <span key={pref} className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-800 uppercase">
-                        {pref.replace(/([A-Z])/g, ' $1').trim()}
+                        {pref.replace(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g, ' ').trim()}
                       </span>
                     ))
                 ) : (

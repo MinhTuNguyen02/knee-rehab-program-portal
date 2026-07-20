@@ -18,6 +18,11 @@ export default function proxy(request: NextRequest) {
   }
 
   if (isAuthPage && token) {
+    if (request.nextUrl.searchParams.get("reason") === "expired") {
+      const response = NextResponse.next();
+      response.cookies.delete("auth_token");
+      return response;
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

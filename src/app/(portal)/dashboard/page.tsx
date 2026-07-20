@@ -81,6 +81,11 @@ export default async function DashboardPage() {
       </div>
     );
   } catch (error) {
+    const err = error as any;
+
+    if (err?.message === "NEXT_REDIRECT" || err?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
     console.error("Dashboard fetch error:", error);
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 dark:border-red-900/50 dark:bg-red-900/10">

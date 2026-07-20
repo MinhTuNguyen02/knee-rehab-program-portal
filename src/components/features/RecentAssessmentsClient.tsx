@@ -34,12 +34,12 @@ export function RecentAssessmentsClient({ recentAssessments }: RecentAssessments
         data={paginatedData}
         onRowClick={(assessment) => { setSelectedAssessment(assessment); setIsModalOpen(true); }}
         emptyStateMessage="No recent assessments found."
-        pagination={{
-          hasMore: currentPage < totalPages,
-          canGoPrev: currentPage > 1,
-          onNext: () => setCurrentPage((prev) => prev + 1),
-          onPrev: () => setCurrentPage((prev) => prev - 1),
-        }}
+      // pagination={{
+      //   hasMore: currentPage < totalPages,
+      //   canGoPrev: currentPage > 1,
+      //   onNext: () => setCurrentPage((prev) => prev + 1),
+      //   onPrev: () => setCurrentPage((prev) => prev - 1),
+      // }}
       />
 
       <Modal

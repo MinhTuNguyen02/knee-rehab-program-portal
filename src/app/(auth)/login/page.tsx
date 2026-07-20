@@ -103,7 +103,7 @@ function LoginForm() {
       <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
         <div className="text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-            Clinical Portal
+            KRPS Clinical Portal
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Sign in to manage patient assessments

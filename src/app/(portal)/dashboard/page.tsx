@@ -8,7 +8,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-  // throw new Error("Lỗi test từ hệ thống!");
+  // throw new Error("Please wait for a while");
   const token = await getToken();
 
   if (!token) {
@@ -27,10 +27,7 @@ export default async function DashboardPage() {
       ? Math.round((stats.totalOptedIn / stats.totalSubmissions) * 100)
       : 0;
 
-    const totalGreen = stats.byZone?.green || 0;
-    const totalAmber = stats.byZone?.amber || 0;
     const totalRed = stats.byZone?.red || 0;
-    const totalSubmissions = stats.totalSubmissions || 1; // prevent div zero
 
     return (
       <div className="space-y-8">

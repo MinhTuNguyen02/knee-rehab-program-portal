@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { AssessmentDetails } from "@/components/management/AssessmentDetails";
 import { DataTable } from "@/components/data-display/DataTable";
 import { formatDate } from "@/lib/utils";
+import { PatientSlideOver } from "@/components/management/PatientSlideOver";
 
 export function AssessmentsTableClient({ initialData, meta, currentZone, initialCursor }: any) {
   const router = useRouter();
@@ -20,6 +21,7 @@ export function AssessmentsTableClient({ initialData, meta, currentZone, initial
 
   const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   const currentAfter = initialCursor || "";
 
@@ -108,13 +110,13 @@ export function AssessmentsTableClient({ initialData, meta, currentZone, initial
             { key: "source", label: "Source", sortable: false, className: "capitalize", render: (a) => a.source?.replace('_', ' ') || "N/A" },
             {
               key: "patient",
-              label: "Linked Patient",
+              label: "Patient",
               sortable: true,
               render: (a) => a.patient ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    router.push(`/leads/${a.patient.id}`);
+                    setSelectedPatientId(a.patient.id);
                   }}
                   className="text-primary hover:text-primary-hover font-medium underline-offset-2 hover:underline"
                 >
@@ -149,6 +151,11 @@ export function AssessmentsTableClient({ initialData, meta, currentZone, initial
       >
         <AssessmentDetails assessment={selectedAssessment} />
       </Modal>
+
+      <PatientSlideOver
+        patientId={selectedPatientId}
+        onClose={() => setSelectedPatientId(null)}
+      />
     </div>
   );
 }

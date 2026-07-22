@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Activity, Users, ClipboardList, List, X, LogOut } from "lucide-react";
 import { useTransition } from "react";
+import UserMenu from "@/components/ui/UserMenu";
 
 export default function PortalLayout({
   children,
@@ -15,15 +16,6 @@ export default function PortalLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  const handleLogout = async () => {
-    startTransition(async () => {
-      try {
-        await fetch("/api/auth/logout", { method: "POST" });
-      } catch (err) { }
-      router.push("/login");
-    });
-  };
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Activity },
@@ -90,16 +82,11 @@ export default function PortalLayout({
             <List size={24} />
           </button>
 
-          <div className="flex flex-1 justify-end">
-            <button
-              onClick={handleLogout}
-              disabled={isPending}
-              className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500"
-            >
-              <span>{isPending ? 'Logging out...' : 'Logout'}</span>
-
-              <LogOut size={18} />
-            </button>
+          <div className="ml-auto">
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
+              <UserMenu />
+              {/* <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" /> */}
+            </div>
           </div>
         </header>
 
